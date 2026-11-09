@@ -1,8 +1,8 @@
 
-"""GridPower - protótipo inicial para demonstrar a Árvore Geradora Mínima.
+"""GridPower - protótipo para demonstrar uma Árvore Geradora Mínima.
 
 Execução: python main.py
-Este protótipo usa um grafo de exemplo fixo e implementa Prim e Kruskal.
+O protótipo utiliza um grafo de exemplo e implementa Prim e Kruskal.
 """
 
 from dataclasses import dataclass
@@ -22,17 +22,22 @@ class Grafo:
 
     def adicionar_vertice(self, nome):
         nome = str(nome).strip()
+
         if not nome:
             raise ValueError("O nome do vértice não pode ser vazio.")
+
         self.vertices.add(nome)
 
     def adicionar_aresta(self, origem, destino, peso):
         if origem == destino:
             raise ValueError("Não é permitido conectar um vértice a ele mesmo.")
+
         if origem not in self.vertices or destino not in self.vertices:
             raise ValueError("Os dois vértices precisam estar cadastrados.")
+
         if isinstance(peso, bool) or not isinstance(peso, (int, float)) or peso < 0:
             raise ValueError("O custo deve ser um número não negativo.")
+
         self.arestas.append(Aresta(origem, destino, float(peso)))
 
 
@@ -41,22 +46,66 @@ def custo_total(arestas):
 
 
 def comparar_resultados(grafo, resultado_prim, resultado_kruskal):
-    """Compara os resultados dos algoritmos de Prim e Kruskal."""
+    """Compara e valida os resultados dos algoritmos de Prim e Kruskal."""
 
     if not grafo.vertices:
         raise ValueError("Não é possível comparar um grafo vazio.")
 
     quantidade_esperada = len(grafo.vertices) - 1
+    arestas_grafo = grafo.arestas
 
-    if len(resultado_prim) != quantidade_esperada:
-        raise ValueError(
-            "O resultado de Prim não forma uma árvore geradora."
-        )
+    def validar_arvore(resultado, nome):
+        if len(resultado) != quantidade_esperada:
+            raise ValueError(
+                f"O resultado de {nome} não possui a quantidade correta de arestas."
+            )
 
-    if len(resultado_kruskal) != quantidade_esperada:
-        raise ValueError(
-            "O resultado de Kruskal não forma uma árvore geradora."
-        )
+        pais = {vertice: vertice for vertice in grafo.vertices}
+
+        def encontrar(vertice):
+            while pais[vertice] != vertice:
+                pais[vertice] = pais[pais[vertice]]
+                vertice = pais[vertice]
+            return vertice
+
+        for aresta in resultado:
+            origem = aresta.origem
+            destino = aresta.destino
+
+            if origem not in pais or destino not in pais:
+                raise ValueError(
+                    f"O resultado de {nome} possui vértice inválido."
+                )
+
+            existe = any(
+                (
+                    (a.origem == origem and a.destino == destino)
+                    or (a.origem == destino and a.destino == origem)
+                )
+                and abs(a.peso - aresta.peso) < 1e-9
+                for a in arestas_grafo
+            )
+
+            if not existe:
+                raise ValueError(
+                    f"O resultado de {nome} possui aresta inválida."
+                )
+
+            raiz_origem = encontrar(origem)
+            raiz_destino = encontrar(destino)
+
+            if raiz_origem == raiz_destino:
+                raise ValueError(f"O resultado de {nome} possui ciclo.")
+
+            pais[raiz_origem] = raiz_destino
+
+        raizes = {encontrar(v) for v in grafo.vertices}
+
+        if len(raizes) != 1:
+            raise ValueError(f"O resultado de {nome} não é conectado.")
+
+    validar_arvore(resultado_prim, "Prim")
+    validar_arvore(resultado_kruskal, "Kruskal")
 
     custo_prim = custo_total(resultado_prim)
     custo_kruskal = custo_total(resultado_kruskal)
@@ -123,8 +172,10 @@ class UnionFind:
 
         if self.rank[raiz_a] < self.rank[raiz_b]:
             self.pai[raiz_a] = raiz_b
+
         elif self.rank[raiz_a] > self.rank[raiz_b]:
             self.pai[raiz_b] = raiz_a
+
         else:
             self.pai[raiz_b] = raiz_a
             self.rank[raiz_a] += 1
@@ -184,7 +235,9 @@ def exibir_resultado(nome, arestas):
             f"R$ {a.peso * 1000:,.2f}"
         )
 
-    print(f"Custo total: R$ {custo_total(arestas) * 1000:,.2f}")
+    print(
+        f"Custo total: R$ {custo_total(arestas) * 1000:,.2f}"
+    )
 
 
 def main():
@@ -220,9 +273,12 @@ def main():
     if comparacao["custos_iguais"]:
         print("Os algoritmos encontraram o mesmo custo mínimo.")
     else:
-        print("Atenção: os custos são diferentes.")
+        print("Atenção: os custos diferem; revise as implementações.")
 
-    print("\nObservação: este é um protótipo inicial com dados de exemplo.")
+    print(
+        "\nObservação: este é um protótipo inicial "
+        "com dados de exemplo."
+    )
 
 
 if __name__ == "__main__":

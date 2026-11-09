@@ -65,6 +65,12 @@ class TestGridPower(unittest.TestCase):
         for vertice in ["A", "B", "C"]:
             grafo.adicionar_vertice(vertice)
 
+        # Cadastra as conexões no grafo.
+        grafo.adicionar_aresta("A", "B", 1)
+        grafo.adicionar_aresta("A", "C", 1)
+        grafo.adicionar_aresta("B", "C", 1)
+
+        # Duas árvores diferentes com o mesmo custo.
         resultado_prim = [
             Aresta("A", "B", 1),
             Aresta("A", "C", 1)
