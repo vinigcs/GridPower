@@ -60,12 +60,43 @@ import math
 import matplotlib.pyplot as plt
 
 def _posicoes(grafo: Grafo) -> dict:
-    nomes = grafo.nomes_vertices
-    n = max(len(nomes), 1)
-    return {
-        nome: (math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n))
-        for i, nome in enumerate(nomes)
-    }
+    """Calcula posições dos vértices.
+    Se o grafo for desconectado, posiciona cada componente em seu próprio círculo
+    para deixar as ilhas visualmente separadas."""
+    componentes = grafo.componentes_conexos()
+
+    # Se for conexo, usa layout circular simples
+    if len(componentes) <= 1:
+        nomes = grafo.nomes_vertices
+        n = max(len(nomes), 1)
+        return {
+            nome: (math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n))
+            for i, nome in enumerate(nomes)
+        }
+
+    # Grafo desconectado: posiciona cada componente em círculo separado
+    # Calcula posições dos centros dos círculos (lado a lado)
+    num_componentes = len(componentes)
+    raio_componente = 0.35  # raio de cada círculo componente
+    espacamento = raio_componente * 2.5  # espaço entre centros
+
+    # Centros distribuídos horizontalmente
+    centros = []
+    for i in range(num_componentes):
+        x_centro = (i - (num_componentes - 1) / 2) * espacamento
+        centros.append((x_centro, 0))
+
+    posicoes = {}
+    for idx, componente in enumerate(componentes):
+        cx, cy = centros[idx]
+        n_comp = len(componente)
+        for j, nome in enumerate(componente):
+            angulo = 2 * math.pi * j / n_comp
+            posicoes[nome] = (
+                cx + raio_componente * math.cos(angulo),
+                cy + raio_componente * math.sin(angulo)
+            )
+    return posicoes
 
 def _figura_rede(grafo: Grafo, mst=None, cor_destaque=COR_PRIM, titulo: str = "") -> plt.Figure:
     """Rede em layout circular; arestas da AGM em cor forte, demais em cinza tracejado."""
